@@ -9,7 +9,8 @@ NEXUS AI aims to make local and cloud AI tools easier to carry and use across co
 - [ ] User-editable engine configuration
 
 ## Next
-- [ ] Unified engine and model inventory
+- [x] Initial Ollama model inventory and basic pull/delete controls
+- [x] Basic GGUF launch/stop controls using an existing llama-server binary
 - [ ] Adapter interface for coding agents
 - [ ] Guided setup for llama.cpp and Ollama
 - [ ] Optional cloud-provider configuration (API keys stored locally and never committed)
