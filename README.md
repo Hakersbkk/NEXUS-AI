@@ -13,24 +13,45 @@ NEXUS AI is an open-source project exploring a lightweight, portable way to mana
 - Lists model IDs exposed by reachable endpoints.
 - Stores user configuration outside the repository.
 
-## Quick start
+## Quick Start
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Hakersbkk/NEXUS-AI.git
+```
+
+### 2. Enter the project directory
+
+```bash
+cd NEXUS-AI
+```
+
+### 3. Run NEXUS AI
 
 ```bash
 python3 nexus.py
-python3 nexus.py status
-python3 nexus.py models
-python3 nexus.py init
 ```
 
-The default checks are:
-- Ollama: `http://127.0.0.1:11434/api/tags`
-- OpenAI-compatible server: `http://127.0.0.1:8080/v1/models`
-- OpenAI-compatible server: `http://127.0.0.1:8081/v1/models`
+### Available Commands
 
-The initial configuration is created at:
-- Linux: `~/.config/nexus-ai/config.json`
-- macOS: `~/Library/Application Support/NEXUS-AI/config.json`
-- Windows: `%APPDATA%\\NEXUS-AI\\config.json`
+Check system status:
+
+```bash
+python3 nexus.py status
+```
+
+List available AI models:
+
+```bash
+python3 nexus.py models
+```
+
+Initialize configuration:
+
+```bash
+python3 nexus.py init
+```
 
 ## Project direction
 
