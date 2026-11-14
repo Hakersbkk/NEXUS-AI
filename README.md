@@ -11,6 +11,7 @@ NEXUS AI is an open-source project exploring a lightweight, portable way to mana
 - Python 3 CLI with no third-party Python dependencies.
 - Checks common local endpoints for Ollama and OpenAI-compatible servers such as llama.cpp.
 - Lists model IDs exposed by reachable endpoints.
+- Lets users register their own local or remote LLM server through a custom models endpoint URL.
 - Stores user configuration outside the repository.
 
 ## Quick Start
@@ -52,6 +53,31 @@ Initialize configuration:
 ```bash
 python3 nexus.py init
 ```
+
+### Add Your Own LLM
+
+NEXUS AI can connect to your own model server if it exposes a compatible models-list endpoint. This can be a local server (for example, LM Studio or llama.cpp) or a remote OpenAI-compatible provider.
+
+Interactive setup:
+
+```bash
+python3 nexus.py add-endpoint
+```
+
+Or provide the name and full models endpoint directly:
+
+```bash
+python3 nexus.py add-endpoint "My LLM" "http://127.0.0.1:1234/v1/models"
+```
+
+Then check the connection and list the models:
+
+```bash
+python3 nexus.py status
+python3 nexus.py models
+```
+
+Use the server's actual models endpoint URL (commonly `/v1/models` for OpenAI-compatible servers or `/api/tags` for Ollama). The model must already be running in its own engine; this command registers the endpoint and does not download or launch model files. Authenticated cloud endpoints/API keys are not yet supported by this MVP.
 
 ## Project direction
 
