@@ -355,7 +355,13 @@ class NexusLauncher:
             self.root.after(0, lambda: self._ollama_models_loaded(items, error))
         threading.Thread(target=worker, daemon=True).start()
 
+    def _set_ollama_status(self, text, color=MUTED):
+        if hasattr(self, "ollama_status") and self.ollama_status.winfo_exists():
+            self.ollama_status.configure(text=text, fg=color)
+
     def _ollama_models_loaded(self, items, error):
+        if not hasattr(self, "ollama_table") or not self.ollama_table.winfo_exists():
+            return
         self.ollama_table.delete(*self.ollama_table.get_children())
         if error:
             self.ollama_status.configure(text=f"Ollama unavailable: {error}", fg=RED)
@@ -378,7 +384,7 @@ class NexusLauncher:
             total, completed = item.get("total"), item.get("completed")
             if total:
                 status += f" {completed * 100 // total}%"
-            self.root.after(0, lambda s=status: self.ollama_status.configure(text=s[:90], fg=BLUE))
+            self.root.after(0, lambda s=status: self._set_ollama_status(s[:90], BLUE))
         def worker():
             try:
                 nexus.ollama_pull_model(name, progress)
@@ -389,6 +395,8 @@ class NexusLauncher:
         threading.Thread(target=worker, daemon=True).start()
 
     def _pull_done(self, name, error):
+        if not hasattr(self, "ollama_status") or not self.ollama_status.winfo_exists():
+            return
         if error:
             self.ollama_status.configure(text=f"Pull failed: {error}"[:100], fg=RED)
         else:
@@ -413,6 +421,8 @@ class NexusLauncher:
         threading.Thread(target=worker, daemon=True).start()
 
     def _delete_done(self, name, error):
+        if not hasattr(self, "ollama_status") or not self.ollama_status.winfo_exists():
+            return
         if error:
             self.ollama_status.configure(text=f"Delete failed: {error}"[:100], fg=RED)
         else:
