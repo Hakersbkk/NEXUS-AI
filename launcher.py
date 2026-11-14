@@ -313,7 +313,7 @@ class NexusLauncher:
         opts.pack(fill="x", pady=(5, 0))
         self._label(opts, "Port", 8, MUTED).pack(side="left")
         self.llama_port = tk.Entry(opts, width=7, bg=BG, fg=TEXT, insertbackground=TEXT, relief="flat")
-        self.llama_port.insert(0, "8080")
+        self.llama_port.insert(0, "8082")
         self.llama_port.pack(side="left", padx=(5, 14), ipady=5)
         self._label(opts, "Context", 8, MUTED).pack(side="left")
         self.llama_context = tk.Entry(opts, width=8, bg=BG, fg=TEXT, insertbackground=TEXT, relief="flat")
