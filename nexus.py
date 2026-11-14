@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import subprocess
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -130,6 +131,65 @@ def add_endpoint(name: str | None = None, url: str | None = None) -> None:
     path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     print(f"Added: {name} — {url}")
     print("Run 'python3 nexus.py status' and 'python3 nexus.py models' to check it.")
+
+
+
+def ollama_request(path: str, payload: dict | None = None, timeout: float = 30.0):
+    """Call the local Ollama HTTP API."""
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = {"Content-Type": "application/json", "User-Agent": "NEXUS-AI/0.1"}
+    req = urllib.request.Request("http://127.0.0.1:11434" + path, data=body, headers=headers)
+    with urllib.request.urlopen(req, timeout=timeout) as response:
+        raw = response.read()
+    return json.loads(raw.decode("utf-8")) if raw else {}
+
+
+def ollama_list_models() -> list[dict]:
+    data = ollama_request("/api/tags", timeout=5)
+    return data.get("models", []) if isinstance(data, dict) else []
+
+
+def ollama_pull_model(model_name: str, progress_callback=None) -> None:
+    """Pull an Ollama model, reporting streamed progress when requested."""
+    payload = json.dumps({"name": model_name, "stream": True}).encode("utf-8")
+    req = urllib.request.Request(
+        "http://127.0.0.1:11434/api/pull", data=payload,
+        headers={"Content-Type": "application/json", "User-Agent": "NEXUS-AI/0.1"}
+    )
+    with urllib.request.urlopen(req, timeout=60) as response:
+        for raw_line in response:
+            if not raw_line.strip():
+                continue
+            item = json.loads(raw_line.decode("utf-8"))
+            if progress_callback:
+                progress_callback(item)
+            if item.get("error"):
+                raise RuntimeError(item["error"])
+
+
+def ollama_delete_model(model_name: str) -> None:
+    ollama_request("/api/delete", {"name": model_name}, timeout=30)
+
+
+def start_llama_server(binary: str, model_path: str, port: int = 8080,
+                       context: int = 4096) -> subprocess.Popen:
+    """Launch llama-server without a shell; return the child process handle."""
+    executable = Path(binary).expanduser()
+    model = Path(model_path).expanduser()
+    if not executable.is_file():
+        raise FileNotFoundError(f"llama-server executable not found: {executable}")
+    if not model.is_file() or model.suffix.lower() != ".gguf":
+        raise FileNotFoundError(f"Select an existing .gguf model file: {model}")
+    if not 1 <= int(port) <= 65535:
+        raise ValueError("Port must be between 1 and 65535.")
+    if int(context) < 256:
+        raise ValueError("Context size must be at least 256.")
+    return subprocess.Popen(
+        [str(executable), "-m", str(model), "--host", "127.0.0.1",
+         "--port", str(int(port)), "-c", str(int(context))],
+        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL, shell=False
+    )
 
 
 def init_config() -> None:
