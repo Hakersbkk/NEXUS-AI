@@ -74,7 +74,7 @@ Open the **Model Manager** page in the desktop launcher to:
 - Delete a selected Ollama model after confirmation.
 - Select an existing `llama-server` executable and a local `.gguf` file, then launch or stop a local OpenAI-compatible server.
 
-The Ollama actions require Ollama to be running at `http://127.0.0.1:11434`. GGUF launching requires a compatible `llama-server` binary already installed and a model file already present on disk. NEXUS AI does not download GGUF files or install the llama.cpp runtime yet. The launch controls use CPU/default llama.cpp settings and let you choose the port and context size.
+The Ollama actions require Ollama to be running at `http://127.0.0.1:11434`. GGUF launching requires a compatible `llama-server` binary already installed and a model file already present on disk. NEXUS AI does not download GGUF files or install the llama.cpp runtime yet. The launch controls use CPU/default llama.cpp settings and let you choose the port (default 8082) and context size.
 
 ### Add Your Own LLM
 
