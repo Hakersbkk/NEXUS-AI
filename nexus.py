@@ -61,9 +61,20 @@ def check_endpoint(name: str, url: str) -> tuple[bool, str]:
         return False, str(reason)
 
 
+def configured_endpoints():
+    endpoints = load_config().get("endpoints", DEFAULT_ENDPOINTS)
+    normalized = []
+    for item in endpoints:
+        if isinstance(item, dict) and item.get("name") and item.get("url"):
+            normalized.append((item["name"], item["url"]))
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            normalized.append((str(item[0]), str(item[1])))
+    return normalized
+
+
 def status() -> None:
     print(f"\n{APP_NAME} — SYSTEM STATUS")
-    for name, url in load_config().get("endpoints", DEFAULT_ENDPOINTS):
+    for name, url in configured_endpoints():
         ok, detail = check_endpoint(name, url)
         print(f"[{'ONLINE' if ok else 'OFFLINE'}] {name}: {detail}")
     print(f"\nConfig: {config_path()}")
@@ -72,7 +83,7 @@ def status() -> None:
 def models() -> None:
     print(f"\n{APP_NAME} — AVAILABLE MODELS")
     found = False
-    for name, url in load_config().get("endpoints", DEFAULT_ENDPOINTS):
+    for name, url in configured_endpoints():
         try:
             data = request_json(url)
             entries = data.get("models") or data.get("data") or []
