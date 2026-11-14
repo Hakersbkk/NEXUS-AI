@@ -5,7 +5,7 @@ NEXUS AI aims to make local and cloud AI tools easier to carry and use across co
 ## MVP — in progress
 - [x] Standard-library Python CLI
 - [x] Detect common Ollama and OpenAI-compatible local endpoints
-- [ ] Portable launcher and first-run setup
+- [x] First lightweight Tkinter desktop launcher
 - [ ] User-editable engine configuration
 
 ## Next
@@ -13,7 +13,7 @@ NEXUS AI aims to make local and cloud AI tools easier to carry and use across co
 - [ ] Adapter interface for coding agents
 - [ ] Guided setup for llama.cpp and Ollama
 - [ ] Optional cloud-provider configuration (API keys stored locally and never committed)
-- [ ] Lightweight desktop interface
+- [x] Initial desktop dashboard, endpoint status, model list, and add-LLM form
 
 ## Later
 - [ ] Portable runtime profiles for Linux, Windows, and macOS
