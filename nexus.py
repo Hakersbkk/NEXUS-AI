@@ -97,6 +97,41 @@ def models() -> None:
         print("No reachable models found. Start a local engine or check its endpoint.")
 
 
+def add_endpoint(name: str | None = None, url: str | None = None) -> None:
+    """Register a custom model server that exposes a models-list endpoint."""
+    if not name:
+        name = input("Name for this LLM/server: ").strip()
+    if not url:
+        url = input("Models endpoint URL (for example http://127.0.0.1:1234/v1/models): ").strip()
+    if not name or not url:
+        print("Both a name and URL are required.")
+        return
+    if not url.startswith(("http://", "https://")):
+        print("URL must start with http:// or https://")
+        return
+
+    path = config_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    config = load_config()
+    endpoints = config.get("endpoints", DEFAULT_ENDPOINTS)
+    if not isinstance(endpoints, list):
+        endpoints = []
+    normalized = []
+    for item in endpoints:
+        if isinstance(item, dict):
+            normalized.append(item)
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            normalized.append({"name": str(item[0]), "url": str(item[1])})
+    if any(item.get("url") == url for item in normalized):
+        print(f"That endpoint is already configured: {url}")
+        return
+    normalized.append({"name": name, "url": url})
+    config["endpoints"] = normalized
+    path.write_text(json.dumps(config, indent=2) + "\\n", encoding="utf-8")
+    print(f"Added: {name} — {url}")
+    print("Run 'python3 nexus.py status' and 'python3 nexus.py models' to check it.")
+
+
 def init_config() -> None:
     path = config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,9 +147,14 @@ def init_config() -> None:
 def main() -> None:
     import argparse
     parser = argparse.ArgumentParser(description="Portable local AI endpoint checker")
-    parser.add_argument("command", nargs="?", choices=["status", "models", "init"], default="status")
+    parser.add_argument("command", nargs="?", choices=["status", "models", "init", "add-endpoint"], default="status")
+    parser.add_argument("name", nargs="?", help="Display name for a custom LLM endpoint")
+    parser.add_argument("url", nargs="?", help="Full models endpoint URL")
     args = parser.parse_args()
-    {"status": status, "models": models, "init": init_config}[args.command]()
+    if args.command == "add-endpoint":
+        add_endpoint(args.name, args.url)
+    else:
+        {"status": status, "models": models, "init": init_config}[args.command]()
 
 
 if __name__ == "__main__":
