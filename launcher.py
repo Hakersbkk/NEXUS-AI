@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 
 import nexus
 
@@ -80,6 +80,7 @@ class NexusLauncher:
         self._label(sidebar, "SYSTEM MENU", 9, MUTED, True).pack(anchor="w", pady=(0, 14))
         self._button(sidebar, "⌂  Dashboard", lambda: self.show_page("dashboard"), True).pack(fill="x", pady=4)
         self._button(sidebar, "▦  My Models", lambda: self.show_page("models")).pack(fill="x", pady=4)
+        self._button(sidebar, "⚙  Model Manager", lambda: self.show_page("manager")).pack(fill="x", pady=4)
         self._button(sidebar, "+  Add Your LLM", self.add_llm).pack(fill="x", pady=4)
         tk.Frame(sidebar, bg=BORDER, height=1).pack(fill="x", pady=16)
         self._label(sidebar, "NEXUS AI", 9, ACCENT, True).pack(anchor="w")
@@ -264,6 +265,184 @@ class NexusLauncher:
         self._button(actions, "Cancel", dialog.destroy).pack(side="right")
         self._button(actions, "Save endpoint", save, True).pack(side="right", padx=8)
         name_entry.focus_set()
+
+
+    def _build_manager_page(self):
+        self._label(self.content, "MODEL MANAGEMENT", 9, ACCENT, True).pack(anchor="w")
+        self._label(self.content, "Install • Organize • Launch", 21, TEXT, True).pack(anchor="w", pady=(4, 3))
+        self._label(self.content, "Manage Ollama downloads and launch local GGUF files with llama.cpp.", 8, MUTED).pack(anchor="w", pady=(0, 12))
+
+        ollama = tk.Frame(self.content, bg=PANEL, padx=14, pady=12,
+                          highlightthickness=1, highlightbackground=BORDER)
+        ollama.pack(fill="both", expand=True, pady=(0, 10))
+        top = tk.Frame(ollama, bg=PANEL)
+        top.pack(fill="x")
+        self._label(top, "OLLAMA LIBRARY", 10, TEXT, True).pack(side="left")
+        self._button(top, "↻ Refresh", self.load_ollama_models).pack(side="right")
+        pullrow = tk.Frame(ollama, bg=PANEL)
+        pullrow.pack(fill="x", pady=(10, 8))
+        self.ollama_name = tk.Entry(pullrow, bg=BG, fg=TEXT, insertbackground=TEXT,
+                                    relief="flat", font=("TkDefaultFont", 9))
+        self.ollama_name.pack(side="left", fill="x", expand=True, ipady=7)
+        self.ollama_name.insert(0, "qwen2.5:0.5b")
+        self._button(pullrow, "↓ Pull model", self.pull_ollama_model, True).pack(side="left", padx=(8, 0))
+        cols = ("name", "size", "modified")
+        self.ollama_table = ttk.Treeview(ollama, columns=cols, show="headings", height=4)
+        for col, title in zip(cols, ("MODEL", "SIZE", "MODIFIED")):
+            self.ollama_table.heading(col, text=title)
+        self.ollama_table.column("name", width=220, anchor="w")
+        self.ollama_table.column("size", width=100, anchor="w")
+        self.ollama_table.column("modified", width=180, anchor="w")
+        self.ollama_table.pack(fill="both", expand=True)
+        actions = tk.Frame(ollama, bg=PANEL)
+        actions.pack(fill="x", pady=(7, 0))
+        self._button(actions, "Delete selected", self.delete_ollama_model).pack(side="left")
+        self.ollama_status = self._label(actions, "Connects to Ollama at 127.0.0.1:11434", 8, MUTED)
+        self.ollama_status.pack(side="left", padx=12)
+
+        gguf = tk.Frame(self.content, bg=PANEL, padx=14, pady=12,
+                        highlightthickness=1, highlightbackground=BORDER)
+        gguf.pack(fill="x")
+        self._label(gguf, "GGUF / LLAMA.CPP", 10, TEXT, True).pack(anchor="w")
+        self._label(gguf, "Launch a GGUF model using your existing llama-server binary.", 8, MUTED).pack(anchor="w", pady=(3, 9))
+        self.llama_binary = tk.StringVar(value=str(nexus.Path.home() / "llama.cpp" / "build" / "bin" / "llama-server"))
+        self.gguf_path = tk.StringVar()
+        self._file_picker_row(gguf, "llama-server", self.llama_binary, self.pick_llama_binary)
+        self._file_picker_row(gguf, "GGUF model", self.gguf_path, self.pick_gguf_model)
+        opts = tk.Frame(gguf, bg=PANEL)
+        opts.pack(fill="x", pady=(5, 0))
+        self._label(opts, "Port", 8, MUTED).pack(side="left")
+        self.llama_port = tk.Entry(opts, width=7, bg=BG, fg=TEXT, insertbackground=TEXT, relief="flat")
+        self.llama_port.insert(0, "8080")
+        self.llama_port.pack(side="left", padx=(5, 14), ipady=5)
+        self._label(opts, "Context", 8, MUTED).pack(side="left")
+        self.llama_context = tk.Entry(opts, width=8, bg=BG, fg=TEXT, insertbackground=TEXT, relief="flat")
+        self.llama_context.insert(0, "4096")
+        self.llama_context.pack(side="left", padx=5, ipady=5)
+        self._button(opts, "▶ Launch server", self.launch_gguf, True).pack(side="right")
+        self._button(opts, "■ Stop server", self.stop_gguf).pack(side="right", padx=7)
+        self.gguf_status = self._label(gguf, "Server not started by this launcher.", 8, MUTED)
+        self.gguf_status.pack(anchor="w", pady=(8, 0))
+        self.load_ollama_models()
+
+    def _file_picker_row(self, parent, label, variable, command):
+        row = tk.Frame(parent, bg=PANEL)
+        row.pack(fill="x", pady=3)
+        self._label(row, label, 8, MUTED).pack(side="left")
+        entry = tk.Entry(row, textvariable=variable, bg=BG, fg=TEXT,
+                         insertbackground=TEXT, relief="flat", font=("TkDefaultFont", 8))
+        entry.pack(side="left", fill="x", expand=True, padx=8, ipady=5)
+        self._button(row, "Browse", command).pack(side="right")
+
+    def pick_llama_binary(self):
+        path = filedialog.askopenfilename(title="Select llama-server executable")
+        if path:
+            self.llama_binary.set(path)
+
+    def pick_gguf_model(self):
+        path = filedialog.askopenfilename(title="Select GGUF model", filetypes=[("GGUF models", "*.gguf"), ("All files", "*")])
+        if path:
+            self.gguf_path.set(path)
+
+    def load_ollama_models(self):
+        self.ollama_status.configure(text="Checking Ollama…", fg=BLUE)
+        def worker():
+            try:
+                items = nexus.ollama_list_models()
+                error = None
+            except Exception as exc:
+                items, error = [], str(exc)
+            self.root.after(0, lambda: self._ollama_models_loaded(items, error))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _ollama_models_loaded(self, items, error):
+        self.ollama_table.delete(*self.ollama_table.get_children())
+        if error:
+            self.ollama_status.configure(text=f"Ollama unavailable: {error}", fg=RED)
+            return
+        for item in items:
+            size = item.get("size", 0)
+            size_text = f"{size / (1024 ** 3):.2f} GB" if size else "—"
+            modified = item.get("modified_at", "—")
+            self.ollama_table.insert("", "end", values=(item.get("name", "unknown"), size_text, modified))
+        self.ollama_status.configure(text=f"{len(items)} installed model(s)", fg=ACCENT)
+
+    def pull_ollama_model(self):
+        name = self.ollama_name.get().strip()
+        if not name:
+            messagebox.showwarning("Model name required", "Enter an Ollama model name, for example qwen2.5:0.5b.")
+            return
+        self.ollama_status.configure(text=f"Downloading {name}…", fg=BLUE)
+        def progress(item):
+            status = item.get("status", "Downloading…")
+            total, completed = item.get("total"), item.get("completed")
+            if total:
+                status += f" {completed * 100 // total}%"
+            self.root.after(0, lambda s=status: self.ollama_status.configure(text=s[:90], fg=BLUE))
+        def worker():
+            try:
+                nexus.ollama_pull_model(name, progress)
+                result = None
+            except Exception as exc:
+                result = str(exc)
+            self.root.after(0, lambda: self._pull_done(name, result))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _pull_done(self, name, error):
+        if error:
+            self.ollama_status.configure(text=f"Pull failed: {error}"[:100], fg=RED)
+        else:
+            self.ollama_status.configure(text=f"Downloaded {name}", fg=ACCENT)
+            self.load_ollama_models()
+
+    def delete_ollama_model(self):
+        selected = self.ollama_table.selection()
+        if not selected:
+            messagebox.showinfo("Select a model", "Select an installed Ollama model first.")
+            return
+        name = self.ollama_table.item(selected[0], "values")[0]
+        if not messagebox.askyesno("Delete model", f"Delete '{name}' from Ollama storage? This cannot be undone."):
+            return
+        def worker():
+            try:
+                nexus.ollama_delete_model(name)
+                error = None
+            except Exception as exc:
+                error = str(exc)
+            self.root.after(0, lambda: self._delete_done(name, error))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _delete_done(self, name, error):
+        if error:
+            self.ollama_status.configure(text=f"Delete failed: {error}"[:100], fg=RED)
+        else:
+            self.ollama_status.configure(text=f"Deleted {name}", fg=ACCENT)
+            self.load_ollama_models()
+
+    def launch_gguf(self):
+        if getattr(self, "llama_process", None) and self.llama_process.poll() is None:
+            messagebox.showinfo("Server already running", "Stop the current llama-server before launching another.")
+            return
+        try:
+            process = nexus.start_llama_server(
+                self.llama_binary.get().strip(), self.gguf_path.get().strip(),
+                int(self.llama_port.get()), int(self.llama_context.get())
+            )
+            self.llama_process = process
+            self.gguf_status.configure(
+                text=f"Starting PID {process.pid} at http://127.0.0.1:{self.llama_port.get()}", fg=ACCENT
+            )
+        except Exception as exc:
+            messagebox.showerror("Could not launch GGUF", str(exc))
+
+    def stop_gguf(self):
+        process = getattr(self, "llama_process", None)
+        if not process or process.poll() is not None:
+            self.gguf_status.configure(text="No launcher-managed llama-server is running.", fg=MUTED)
+            return
+        process.terminate()
+        self.gguf_status.configure(text="Stop signal sent to llama-server.", fg=BLUE)
+
 
 def main():
     root = tk.Tk()
