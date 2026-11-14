@@ -10,6 +10,8 @@ NEXUS AI is an open-source project exploring a lightweight, portable way to mana
 
 - Python 3 CLI with no third-party Python dependencies.
 - First desktop launcher built with Python Tkinter (no extra Python package required when Tkinter is installed).
+- Ollama model library: list installed models, pull models with progress, and delete selected models.
+- GGUF launcher: start and stop a local llama.cpp `llama-server` process using a selected GGUF file.
 - Checks common local endpoints for Ollama and OpenAI-compatible servers such as llama.cpp.
 - Lists model IDs exposed by reachable endpoints.
 - Lets users register their own local or remote LLM server through a custom models endpoint URL.
@@ -62,6 +64,17 @@ Initialize configuration:
 ```bash
 python3 nexus.py init
 ```
+
+### Model Manager
+
+Open the **Model Manager** page in the desktop launcher to:
+
+- Refresh and view models installed in a local Ollama instance.
+- Download a model by entering its Ollama model name (for example, `qwen2.5:0.5b`).
+- Delete a selected Ollama model after confirmation.
+- Select an existing `llama-server` executable and a local `.gguf` file, then launch or stop a local OpenAI-compatible server.
+
+The Ollama actions require Ollama to be running at `http://127.0.0.1:11434`. GGUF launching requires a compatible `llama-server` binary already installed and a model file already present on disk. NEXUS AI does not download GGUF files or install the llama.cpp runtime yet. The launch controls use CPU/default llama.cpp settings and let you choose the port and context size.
 
 ### Add Your Own LLM
 
