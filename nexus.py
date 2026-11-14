@@ -127,7 +127,7 @@ def add_endpoint(name: str | None = None, url: str | None = None) -> None:
         return
     normalized.append({"name": name, "url": url})
     config["endpoints"] = normalized
-    path.write_text(json.dumps(config, indent=2) + "\\n", encoding="utf-8")
+    path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     print(f"Added: {name} — {url}")
     print("Run 'python3 nexus.py status' and 'python3 nexus.py models' to check it.")
 
